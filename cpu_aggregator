@@ -1,0 +1,69 @@
+"""Sample code to interact with a Netdata instance."""
+import asyncio
+import aiohttp
+import json
+
+from netdata import Netdata
+
+"""VARIABLE FIELDS"""
+mygroup = None
+mygroup_value = 0
+aggregate_group = None
+aggregate_group_value = 0
+free_cpu = 100
+""" END VARIABLE FIELDS"""
+
+
+
+
+async def main(mygroup='',mygroup_value=0,aggregate_group=None,aggregate_group_value=0,free_cpu=100):
+    """Get the data from a Netdata instance."""
+    async with aiohttp.ClientSession() as session:
+        output = {}
+        data = Netdata("localhost", loop, session, data="data")
+        await data.get_data("apps.cpu")  
+        datadict = data.values
+        """ 
+        json.dumps(data.values, indent=4, sort_keys=True)
+        #print(json.dumps(data.values, indent=4, sort_keys=True))
+        """
+        # Print the current value of the system's CPU
+        #print("CPU System:", round(data.values["system"], 2))
+        for k,v in datadict.items():
+          if k == mygroup:
+            mygroup_value += v
+            print(mygroup_value)
+          else:
+            if v == None:
+              continue
+            aggregate_group_value += v
+        free_cpu = free_cpu - aggregate_group_value - mygroup_value
+        output['other_cpu_procs'] = round(aggregate_group_value,2)
+        output['casinocoin'] =  round(mygroup_value,2)
+        output['free_cpu'] =  round(free_cpu,2)
+        print('aggregate_group_value',aggregate_group_value,'casinocoin', mygroup_value,'free_cpu',free_cpu)
+        print(output)
+        #output = {'casinocoin':mygroup_value,'other':aggregate_group_value,'unused_cpu':free_cpu}        
+
+    """
+    async with aiohttp.ClientSession() as session:
+        data = Netdata("localhost", loop, session, data="alarms")
+        await data.get_alarms()
+
+        print(data.alarms)
+
+    async with aiohttp.ClientSession() as session:
+        data = Netdata("localhost", loop, session)
+        await data.get_allmetrics()
+
+        print(data.metrics)
+
+        # Print the current value for the system's CPU
+        print(
+            "CPU System:",
+            round(data.metrics["system.cpu"]["dimensions"]["system"]["value"], 2),
+        )
+    """
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main(mygroup='casinocoin'))
